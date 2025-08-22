@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OnlineBookShop.Data;
+using OnlineBookShop.Data.Services;
 using OnlineBookShop.Models;
 
 namespace OnlineBookShop.Controllers
@@ -8,13 +9,16 @@ namespace OnlineBookShop.Controllers
     public class AuthorController : Controller
     {
         private readonly AppDbContext _context;
-        public AuthorController(AppDbContext context)
+
+        private readonly IAuthorService _authorService;
+        public AuthorController(AppDbContext context, IAuthorService authorService)
         {
             _context = context;
+            _authorService = authorService;
         }
         public async Task<IActionResult> Index()
         {
-            var authors = await _context.Authors.ToListAsync();
+            var authors = await _authorService.GetAllAuthors();
             return View(authors);
         }
         public IActionResult Create()
@@ -28,8 +32,7 @@ namespace OnlineBookShop.Controllers
             ModelState.Remove("Id");
             if (ModelState.IsValid)
             {
-                await _context.Authors.AddAsync(author);
-                _context.SaveChanges();
+                await _authorService.AddAuthor(author);
                 return RedirectToAction("Index");
             }
             return View(author);
@@ -40,7 +43,7 @@ namespace OnlineBookShop.Controllers
             var author = await _context.Authors.FindAsync(id);
             if (author == null)
             {
-                return NotFound();
+                return View("NotFound");
             }
             return View(author);
         }
@@ -50,28 +53,27 @@ namespace OnlineBookShop.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Authors.Update(author);
-                await _context.SaveChangesAsync();
+                await _authorService.UpdateAuthor(author);
                 return RedirectToAction("Index");
             }
             return View(author);
         }
 
-        public IActionResult Delete()
-        {
-            return View();
-        } 
-
-        [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
-            var author = _context.Authors.Find(id);
+            var author = await _context.Authors.FindAsync(id);
+            return author == null ? View("NotFound") : View(author);
+        }
+
+        [HttpPost, ActionName("Delete")]
+        public async Task<IActionResult> DeleteConfirm(int id)
+        {
+            var author = await _context.Authors.FindAsync(id);
             if (author == null)
             {
-                return NotFound();
+                return View("NotFound");
             }
-            _context.Authors.Remove(author);
-            await _context.SaveChangesAsync();
+            await _authorService.DeleteAuthor(author);
             return RedirectToAction("Index");
         }
     }
