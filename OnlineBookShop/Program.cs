@@ -1,4 +1,10 @@
+using Microsoft.EntityFrameworkCore;
+using OnlineBookShop.Data;
+
 var builder = WebApplication.CreateBuilder(args);
+
+//DbContext Configurations
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
